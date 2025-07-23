@@ -1,0 +1,17 @@
+[
+{
+  "directory": "/home/ran/seek_cytometer/software/cytometer_demo/build",
+  "command": "/opt/Xilinx/2025.1/Vitis/gnu/aarch64/lin/aarch64-none/bin/aarch64-none-elf-gcc -isystem /home/ran/seek_cytometer/software/seek_cytometer/export/seek_cytometer/sw/standalone_psu_cortexa53_0/include -isystem /opt/Xilinx/2025.1/gnu/aarch64/lin/aarch64-none/x86_64-oesdk-linux/usr/lib/aarch64-xilinx-elf/gcc/aarch64-xilinx-elf/13.3.0/include -isystem /opt/Xilinx/2025.1/gnu/aarch64/lin/aarch64-none/x86_64-oesdk-linux/usr/lib/aarch64-xilinx-elf/gcc/aarch64-xilinx-elf/13.3.0/include-fixed -isystem /opt/Xilinx/2025.1/Vitis/gnu/aarch64/lin/aarch64-none/aarch64-xilinx-elf/usr/include  -DSDT  -MMD -MP -specs=/home/ran/seek_cytometer/software/seek_cytometer/export/seek_cytometer/sw/standalone_psu_cortexa53_0/Xilinx.spec -I/home/ran/seek_cytometer/software/seek_cytometer/export/seek_cytometer/sw/standalone_psu_cortexa53_0/include -Wall -Wextra      -O0  -g3     -U__clang__ -o CMakeFiles/cytometer_demo.elf.dir/main.c.obj -c /home/ran/seek_cytometer/software/cytometer_demo/src/main.c",
+  "file": "/home/ran/seek_cytometer/software/cytometer_demo/src/main.c"
+},
+{
+  "directory": "/home/ran/seek_cytometer/software/cytometer_demo/build",
+  "command": "/opt/Xilinx/2025.1/Vitis/gnu/aarch64/lin/aarch64-none/bin/aarch64-none-elf-gcc -isystem /home/ran/seek_cytometer/software/seek_cytometer/export/seek_cytometer/sw/standalone_psu_cortexa53_0/include -isystem /opt/Xilinx/2025.1/gnu/aarch64/lin/aarch64-none/x86_64-oesdk-linux/usr/lib/aarch64-xilinx-elf/gcc/aarch64-xilinx-elf/13.3.0/include -isystem /opt/Xilinx/2025.1/gnu/aarch64/lin/aarch64-none/x86_64-oesdk-linux/usr/lib/aarch64-xilinx-elf/gcc/aarch64-xilinx-elf/13.3.0/include-fixed -isystem /opt/Xilinx/2025.1/Vitis/gnu/aarch64/lin/aarch64-none/aarch64-xilinx-elf/usr/include  -DSDT  -MMD -MP -specs=/home/ran/seek_cytometer/software/seek_cytometer/export/seek_cytometer/sw/standalone_psu_cortexa53_0/Xilinx.spec -I/home/ran/seek_cytometer/software/seek_cytometer/export/seek_cytometer/sw/standalone_psu_cortexa53_0/include -Wall -Wextra      -O0  -g3     -U__clang__ -o CMakeFiles/cytometer_demo.elf.dir/platform.c.obj -c /home/ran/seek_cytometer/software/cytometer_demo/src/platform.c",
+  "file": "/home/ran/seek_cytometer/software/cytometer_demo/src/platform.c"
+},
+{
+  "directory": "/home/ran/seek_cytometer/software/cytometer_demo/build",
+  "command": "/opt/Xilinx/2025.1/Vitis/gnu/aarch64/lin/aarch64-none/bin/aarch64-none-elf-gcc -isystem /home/ran/seek_cytometer/software/seek_cytometer/export/seek_cytometer/sw/standalone_psu_cortexa53_0/include -isystem /opt/Xilinx/2025.1/gnu/aarch64/lin/aarch64-none/x86_64-oesdk-linux/usr/lib/aarch64-xilinx-elf/gcc/aarch64-xilinx-elf/13.3.0/include -isystem /opt/Xilinx/2025.1/gnu/aarch64/lin/aarch64-none/x86_64-oesdk-linux/usr/lib/aarch64-xilinx-elf/gcc/aarch64-xilinx-elf/13.3.0/include-fixed -isystem /opt/Xilinx/2025.1/Vitis/gnu/aarch64/lin/aarch64-none/aarch64-xilinx-elf/usr/include  -DSDT  -MMD -MP -specs=/home/ran/seek_cytometer/software/seek_cytometer/export/seek_cytometer/sw/standalone_psu_cortexa53_0/Xilinx.spec -I/home/ran/seek_cytometer/software/seek_cytometer/export/seek_cytometer/sw/standalone_psu_cortexa53_0/include -Wall -Wextra      -O0  -g3     -U__clang__ -o CMakeFiles/cytometer_demo.elf.dir/udp_server.c.obj -c /home/ran/seek_cytometer/software/cytometer_demo/src/udp_server.c",
+  "file": "/home/ran/seek_cytometer/software/cytometer_demo/src/udp_server.c"
+}
+]
