@@ -22,6 +22,8 @@
 static XTimer timer_inst;
 static XScuGic gic_inst; 
 static u64_t time_ms = 0;
+static u64_t time_s = 0;
+static timer_interval_ms = 100;
 
 int send_udp_frame_flag = 0;
 
@@ -68,20 +70,25 @@ XStatus connect_interrupt(XScuGic *gic, u32 intc_id, Xil_ExceptionHandler handle
 
 u64_t get_platform_time()
 {
+    return time_s;
+}
+
+u64_t get_platform_time_ms()
+{
     return time_ms;
 }
 
 void timer_interval_handler(void *callback_ref, u32 status_event)
 {
-    time_ms++;
+    time_ms += 100;
 
-    if (time_ms % 5 == 0) {
-        send_udp_frame_flag = 1;
+    if (time_ms == 1000) {
+        time_s++;
+        if (time_s % 2 == 0) {
+            send_udp_frame_flag = 1;
+        }
+        time_ms = 0;
     }
-
-    // if (time_ms % 10 == 0) {
-    //     xil_printf("Tick for %d s!\r\n", time_ms);
-    // }
 }
 
 XStatus init_timer(XTimer *timer_inst, unsigned long interval, u8 priority, XTimer_TickHandler handler, void * callback_ref)
@@ -116,7 +123,7 @@ XStatus init_platform()
         return XST_FAILURE;
     }
 
-    status = init_timer(&timer_inst, 1000, 0, timer_interval_handler, NULL);   
+    status = init_timer(&timer_inst, timer_interval_ms, 0, timer_interval_handler, NULL);   
     if (status == XST_FAILURE) {
         xil_printf("In %s-%d: Platform initialize timer failed!\n", __func__, __LINE__);
         return XST_FAILURE;

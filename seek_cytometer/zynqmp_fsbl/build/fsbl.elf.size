@@ -1,2 +1,2 @@
    text	   data	    bss	    dec	    hex	filename
-  96623	   3672	  87760	 188055	  2de97	fsbl.elf
+ 101340	   3672	  87824	 192836	  2f144	fsbl.elf

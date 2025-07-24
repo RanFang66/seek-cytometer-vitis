@@ -31,6 +31,7 @@ set(USER_COMPILE_SOURCES
 "main.c"
 "platform.c"
 "udp_server.c"
+"cytometer.c"
 )
 
 # -----------------------------------------

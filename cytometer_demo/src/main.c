@@ -1,3 +1,4 @@
+#include "cytometer.h"
 #include "xparameters.h"
 
 #include "xil_printf.h"
@@ -10,6 +11,8 @@
 int main()
 {
     init_platform();
+
+    init_cytometer();
 
     xil_printf("-----------Start Seek Cytometer----------");
 

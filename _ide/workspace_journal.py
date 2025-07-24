@@ -1,15 +1,13 @@
-# 2025-07-23T15:45:55.255522
+# 2025-07-24T16:18:43.943677
 import vitis
 
 client = vitis.create_client()
 client.set_workspace(path="software")
 
-comp = client.get_component(name="cytometer_demo")
-status = comp.clean()
-
 platform = client.get_component(name="seek_cytometer")
 status = platform.build()
 
+comp = client.get_component(name="cytometer_demo")
 comp.build()
 
 status = platform.build()

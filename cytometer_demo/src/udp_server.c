@@ -9,7 +9,11 @@
 
 #include "netif/xadapter.h"
 #include "udp_server.h"
+#include <arch/cc.h>
 #include <xstatus.h>
+
+#include "cytometer.h"
+#include "platform.h"
 
 
 #define NETIF_EMAC_BASEADDR         XPAR_XEMACPS_0_BASEADDR
@@ -18,80 +22,36 @@
 
 #define CMD_HAND_SHAKE 				0x0001
 #define CMD_DETECTOR_SETTINGS 		0x0002
-#define CMD_ACQUIRE_SETTINGS		0x0003
-#define CMD_ACQUIRE_START			0x0004
-#define CMD_ACQUIRE_STOP			0x0005
-#define CMD_SORTING_SETTINGS 		0x0006
-#define CMD_SORTING_START			0x0007
-#define CMD_SORTING_STOP			0x0008
+#define CMD_DISABLE_DETECTOR        0x0003
+#define CMD_ACQUIRE_SETTINGS		0x0004
+#define CMD_ACQUIRE_START			0x0005
+#define CMD_ACQUIRE_STOP			0x0006
+#define CMD_SORTING_SETTINGS 		0x0007
+#define CMD_SORTING_START			0x0008
+#define CMD_SORTING_STOP			0x0009
 
 #define CMD_PULSE_DATA				0x0010
 #define CMD_WAVEFORM_DATA			0x0020
 
 
-#define THRESHOLD_TYPE_OR 			(0)
-#define THRESHOLD_TYPE_AND			(1)
-
-#define AD_CHANNEL_NUM				(8)
-int channel_enabled[AD_CHANNEL_NUM];
-
-struct DETECTOR_SETTING {
-	u8_t 	id;
-	u8_t 	enable_height;
-	u8_t	enable_width;
-	u8_t 	enable_area;
-	u8_t 	enable_thresh;
-
-	int 	threshold_val;
-};
-struct DETECTOR_SETTING detector_settings[AD_CHANNEL_NUM];
-
-int threshold_type = THRESHOLD_TYPE_OR;
-
-static void init_detectors()
-{
-	for (int i = 0; i < AD_CHANNEL_NUM; i++) {
-		detector_settings[i].id = i+1;
-		detector_settings[i].enable_height = 0;
-		detector_settings[i].enable_width = 0;
-		detector_settings[i].enable_area = 0;
-		detector_settings[i].enable_thresh = 0;
-		detector_settings[i].threshold_val = 3000;
-	}
-}
-
-static void update_detector_settings(u8_t id, u8_t enable_height, u8_t enable_width, u8_t enable_area, u8_t enable_thresh, int threshold_val)
-{
-	struct DETECTOR_SETTING *detector = &(detector_settings[id-1]);
-	detector->enable_height = enable_height;
-	detector->enable_width = enable_width;
-	detector->enable_area = enable_area;
-	detector->enable_thresh = enable_thresh;
-	detector->threshold_val = threshold_val;
-}
 
 
-void init_cytometer()
-{
-	threshold_type = THRESHOLD_TYPE_OR;
-	init_detectors();
-
-	xil_printf("Initialize cytometer parameters ok.\n");
-}
-
-
+/* Is connected with HMI */
+int is_connected = 0;
+int comm_lost_timer = 0;
 
 static unsigned char mac_ethernet_address[] = {0x00, 0x0a, 0x35, 0x00, 0x01, 0x02 };
 static struct netif netif_inst;
 static struct udp_pcb *server_pcb;
 static u16_t  sequence_val = 0;
-ip_addr_t   target_ip;
-u16_t       target_port;
-static u16_t       server_port = 5001;
+static u16_t  sequence_last = 0;
+static u16_t  sequence_recv = 0;
+static u16_t  sequence_recv_last = 0;
+static u8_t   hmi_state = 0;
 
-
-
-
+ip_addr_t       target_ip;
+u16_t           target_port;
+static u16_t    server_port = 5001;
 
 extern int send_udp_frame_flag;
 
@@ -195,7 +155,7 @@ static XStatus parse_frame(const u8_t *pdata, int len)
 		return XST_FAILURE;
 	}
 
-    u16_t sequence = ((u16_t)pdata[1] << 8) | (u16_t)pdata[2];
+    sequence_recv = ((u16_t)pdata[1] << 8) | (u16_t)pdata[2];
 	u16_t cmd_type = ((u16_t)pdata[3] << 8) | (u16_t)pdata[4];
 	u16_t data_len = ((u16_t)pdata[5] << 8) | (u16_t)pdata[6];
 
@@ -207,10 +167,16 @@ static XStatus parse_frame(const u8_t *pdata, int len)
     const u8_t *data_start = pdata+7;
 	switch (cmd_type) {
 	case CMD_HAND_SHAKE:
-		xil_printf("Recevied a handshake\r\n");
+	{	        
+        u8_t state = (u8_t)data_start[0];
+        if (state != hmi_state) {
+            xil_printf("In %d s, hmi state changed from %d to %d.\r\n", get_platform_time(), hmi_state, state);
+            hmi_state = state;
+        }
 		break;
-
+    }
 	case CMD_DETECTOR_SETTINGS:
+    {
 		for (int i = 0; i < data_len / 9; i++) {
 			u8_t id = (u8_t)data_start[9*i];
 			u8_t enable_height = (u8_t)data_start[9*i + 1];
@@ -223,33 +189,62 @@ static XStatus parse_frame(const u8_t *pdata, int len)
 				update_detector_settings(id, enable_height, enable_width, enable_area, enable_thresh, threshold_val);
 			}
 		}
+        xil_printf("In %d s, Detector settings changed.\r\n", get_platform_time());
 		break;
-
+    }
+    case CMD_DISABLE_DETECTOR:
+    {
+        u8_t id = (u8_t)data_start[0];
+        reset_detector(id);
+        break;
+    }
+    
 	case CMD_ACQUIRE_SETTINGS:
 	break;
-	case CMD_ACQUIRE_START:
-	break;
+	case CMD_ACQUIRE_START: 
+    {
+        cytometer_start_analyze();
+        xil_printf("In %d s, Start analyzing.\r\n", get_platform_time());
+        break;
+    }
+
 	case CMD_ACQUIRE_STOP:
-	break;
+    {
+        cytometer_stop_analyze();
+        xil_printf("In %d s, Stop analyzing.\r\n", get_platform_time());
+
+        break;
+    }
+
 	case CMD_SORTING_SETTINGS:
 	break;
 	case CMD_SORTING_START:
-	break;
+    {
+        cytometer_start_sort();
+        xil_printf("In %d s, Start sorting.\r\n", get_platform_time());
+
+        break;
+    }
+
 	case CMD_SORTING_STOP:
-	break;
+    {
+        cytometer_stop_sort();
+        xil_printf("In %d s, Stop sorting.\r\n", get_platform_time());
+
+    	break;
+    }
+
 	case CMD_PULSE_DATA:
 	break;
+    
 	case CMD_WAVEFORM_DATA:
-		for (int i = 0; i < AD_CHANNEL_NUM; i++) {
-			channel_enabled[i] = 0;
-		}
-		for (int i = 0; i < data_len / 4; i++) {
-			int val = big_endian_to_little_endian(data_start + i*4);
-			if (val > 0 & val < AD_CHANNEL_NUM) {
-				channel_enabled[val] = 1;
-			}
-		}
-		break;
+    {
+		u8_t waveform_en = (u8_t)(data_start[0]);
+        u8_t waveform_channels = (u8_t)(data_start[1]);
+        update_waveform_setting(waveform_en, waveform_channels);
+        break;
+    }
+		
 	default:
 		xil_printf("Udp Server Error: Undefined command type!\n");
 		return XST_FAILURE;
@@ -331,7 +326,6 @@ XStatus send_udp_frame(u16_t cmd_type, u16_t data_len, const u8_t *data)
     ((u8_t *) p->payload)[0] = FRAME_HEADER_SOC_TO_HMI;
     ((u8_t *) p->payload)[1] = ((u8_t)(sequence_val >> 8));
 	((u8_t *) p->payload)[2] = ((u8_t)(sequence_val));
-
 	((u8_t *) p->payload)[3] = ((u8_t)(cmd_type >> 8));
 	((u8_t *) p->payload)[4] = ((u8_t)(cmd_type));
 	((u8_t *) p->payload)[5] = ((u8_t)(data_len >> 8));
@@ -345,7 +339,7 @@ XStatus send_udp_frame(u16_t cmd_type, u16_t data_len, const u8_t *data)
     p->len = p->tot_len = 9+data_len;
     ret = udp_sendto(server_pcb, p, &target_ip, target_port);
     pbuf_free(p);
-
+    sequence_val++;
     if (ret != ERR_OK) {
         xil_printf("Send Udp frame error! err_no = %d\r\n", ret);
         return XST_FAILURE;
@@ -355,7 +349,9 @@ XStatus send_udp_frame(u16_t cmd_type, u16_t data_len, const u8_t *data)
 
 XStatus send_handshake()
 {
-    return send_udp_frame(CMD_HAND_SHAKE, 0, NULL);
+    u8_t send_data[1];
+    send_data[0] = (u8_t)(get_current_state());
+    return send_udp_frame(CMD_HAND_SHAKE, 1, send_data);
 }
 
 
@@ -366,12 +362,30 @@ void lwip_loop_func()
     
     if (send_udp_frame_flag == 1) {
         send_udp_frame_flag = 0;
-        ret = send_handshake();
-        if (ret == XST_SUCCESS) {
-            xil_printf("Udp server send data OK");
-        } else {
-            xil_printf("Udp server send data error.");
+        if (sequence_last == sequence_val) {
+            ret = send_handshake();
         }
+        sequence_last = sequence_val;
+
+        if (is_connected) {
+            if (sequence_recv_last == sequence_recv) {
+                comm_lost_timer += 2;
+                if (comm_lost_timer > 10) {
+                    is_connected = 0;
+                    comm_lost_timer = 0;
+                    xil_printf("At %d s, Communication with HMI is lost!\r\n", get_platform_time());
+                }
+            } else {
+                comm_lost_timer = 0;
+            }
+        } else {
+            comm_lost_timer = 0;
+            if (sequence_recv_last != sequence_recv) {
+                is_connected = 1;
+                xil_printf("At %d s, Communication with HMI connected!\r\n", get_platform_time());
+            }
+        }
+        sequence_recv_last = sequence_recv;
     }
 }
 
